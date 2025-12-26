@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="py-flow-mapper",
-    version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    version="0.1.0-beta",
+    author="Arun Koundinya Parasa",
+    author_email="parasa.arunkoundinya@gmail.com",
     description="Python project analyzer and visualization tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
