@@ -11,11 +11,12 @@ setup(
     description="Python project analyzer and visualization tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/py-flow-mapper",
+    url="https://github.com/ArunKoundinyaParasa/py-flow-mapper",
+    license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Documentation",
         "Topic :: Software Development :: Quality Assurance",
@@ -30,7 +31,14 @@ setup(
     ],
     python_requires=">=3.7",
     install_requires=[
-        "astunparse>=1.6.3",
+        "astunparse>=1.6.3; python_version < '3.9'",
+    ],
+    keywords=[
+        "static-analysis",
+        "call-graph",
+        "data-flow",
+        "mermaid",
+        "python-analysis",
     ],
     entry_points={
         "console_scripts": [
