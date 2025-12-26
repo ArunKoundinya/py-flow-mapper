@@ -97,25 +97,9 @@ def generate_diagrams(args):
     
     generator = MermaidGenerator(metadata_path)
     
-    try:
-        if args.type == 'all' or args.type == 'call':
-            generator.generate_call_graph()
-            print("✓ Generated call graph")
-        
-        if args.type == 'all' or args.type == 'import':
-            generator.generate_import_graph()
-            print("✓ Generated import graph")
-        
-        if args.type == 'all' or args.type == 'class':
-            generator.generate_class_diagram()
-            print("✓ Generated class diagram")
-        
-        if args.type == 'all' or args.type == 'dep':
-            generator.generate_dependency_graph()
-            print("✓ Generated dependency graph")
-        
+    try:    
         if args.type == 'all':
-            master_path = generator.generate_all_diagrams()
+            master_path = generator.generate_detailed_flow_graph()
             print(f"\nAll diagrams generated in: {master_path}")
         
         print("\nDiagrams are ready! You can view them:")
