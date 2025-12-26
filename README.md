@@ -1,4 +1,5 @@
 # PyFlowMapper
+[![Publish Python Package](https://github.com/ArunKoundinya/py-flow-mapper/actions/workflows/publish.yml/badge.svg)](https://github.com/ArunKoundinya/py-flow-mapper/actions/workflows/publish.yml)
 
 A simple Python tool that analyzes your code and shows how functions connect and pass data between each other.
 
