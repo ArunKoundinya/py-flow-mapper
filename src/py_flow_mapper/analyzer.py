@@ -104,12 +104,15 @@ class ProjectAnalyzer:
         return metadata
     
     def _find_python_files(self) -> List[Path]:
-        """Find all Python files in the project, excluding virtual environments."""
+        """Find all Python files in the project, excluding virtual environments and other unwanted directories."""
         python_files = []
-        exclude_dirs = {'venv', '.venv', 'env', '.env', '__pycache__', '.git', 'node_modules'}
+        
+        # Prefixes of directories to exclude
+        exclude_prefixes = ('venv', '.venv', 'env', '.env', '__pycache__', '.git', 'node_modules')
         
         for root, dirs, files in os.walk(self.base_path):
-            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            # Filter out directories that start with any of the exclude prefixes
+            dirs[:] = [d for d in dirs if not d.startswith(exclude_prefixes)]
             
             for file in files:
                 if file.endswith('.py'):
