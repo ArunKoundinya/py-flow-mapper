@@ -11,7 +11,7 @@ setup(
     description="Python project analyzer and visualization tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ArunKoundinyaParasa/py-flow-mapper",
+    url="https://github.com/ArunKoundinya/py-flow-mapper",
     license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
