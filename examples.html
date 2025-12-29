@@ -168,10 +168,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#analyze" id="toc-analyze" class="nav-link" data-scroll-target="#analyze">Analyze</a></li>
   <li><a href="#generate-diagrams" id="toc-generate-diagrams" class="nav-link" data-scroll-target="#generate-diagrams">Generate diagrams</a></li>
   </ul></li>
-  <li><a href="#example-3---analyze-pyflowmapper-itself-self-analysis" id="toc-example-3---analyze-pyflowmapper-itself-self-analysis" class="nav-link" data-scroll-target="#example-3---analyze-pyflowmapper-itself-self-analysis">Example-3 - Analyze PyFlowMapper itself (self-analysis)</a>
+  <li><a href="#example-3---including-external-modules" id="toc-example-3---including-external-modules" class="nav-link" data-scroll-target="#example-3---including-external-modules">Example-3 - Including External Modules</a>
   <ul class="collapse">
   <li><a href="#analyze-1" id="toc-analyze-1" class="nav-link" data-scroll-target="#analyze-1">Analyze</a></li>
   <li><a href="#generate-diagrams-1" id="toc-generate-diagrams-1" class="nav-link" data-scroll-target="#generate-diagrams-1">Generate diagrams</a></li>
+  </ul></li>
+  <li><a href="#example-4---analyze-pyflowmapper-itself-self-analysis" id="toc-example-4---analyze-pyflowmapper-itself-self-analysis" class="nav-link" data-scroll-target="#example-4---analyze-pyflowmapper-itself-self-analysis">Example-4 - Analyze PyFlowMapper itself (self-analysis)</a>
+  <ul class="collapse">
+  <li><a href="#analyze-2" id="toc-analyze-2" class="nav-link" data-scroll-target="#analyze-2">Analyze</a></li>
+  <li><a href="#generate-diagrams-2" id="toc-generate-diagrams-2" class="nav-link" data-scroll-target="#generate-diagrams-2">Generate diagrams</a></li>
   </ul></li>
   <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">Notes</a></li>
   </ul>
@@ -205,7 +210,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/ArunKoundinya/py-flow-mapper.git</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> py-flow-mapper</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#run</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/main_new.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/base_example/main_new.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="expected-output" class="level3">
 <h3 class="anchored" data-anchor-id="expected-output">Expected output</h3>
 <p>This creates a folder named <code>flow_test_project/</code> and generates:</p>
@@ -266,15 +271,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install py-flow-mapper</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="analyze" class="level3">
 <h3 class="anchored" data-anchor-id="analyze">Analyze</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> analyze ./tests/ <span class="at">--entry-point</span> tests/main_new.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> analyze ./tests/base_example <span class="at">--entry-point</span> main_new.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This creates</p>
 <ul>
-<li><code>./tests/project_meta.json</code>.</li>
+<li><code>./tests/base_example/project_meta.json</code>.</li>
 </ul>
 </section>
 <section id="generate-diagrams" class="level3">
 <h3 class="anchored" data-anchor-id="generate-diagrams">Generate diagrams</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> diagram ./tests/project_meta.json</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> diagram ./tests/base_example/project_meta.json</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>An example Mermaid structure you might see:</p>
 <div class="cell" data-layout-align="default">
 <div class="cell-output-display">
@@ -288,19 +293,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         main_new_test_flow_analysis[test_flow_analysis]
     end
     subgraph External [External]
-        ext_MermaidGenerator[MermaidGenerator]
-        ext_ProjectAnalyzer[ProjectAnalyzer]
+        ext_pathlib_Path[Path]
+        ext_py_flow_mapper_analyzer_ProjectAnalyzer[ProjectAnalyzer]
+        ext_py_flow_mapper_mermaid_generator_MermaidGenerator[MermaidGenerator]
         Done((Done))
     end
+    main_new_create_flow_test_project --&gt; |__file__| ext_pathlib_Path
     main_new_test_flow_analysis --&gt; main_new_create_flow_test_project
-    main_new_test_flow_analysis --&gt; ext_ProjectAnalyzer
-    main_new_test_flow_analysis --&gt; |meta_file| ext_MermaidGenerator
+    main_new_test_flow_analysis --&gt; ext_py_flow_mapper_analyzer_ProjectAnalyzer
+    main_new_test_flow_analysis --&gt; |meta_file| ext_py_flow_mapper_mermaid_generator_MermaidGenerator
     main_new_main --&gt; main_new_test_flow_analysis
     main_new_create_flow_test_project -.-&gt;|project_dir| main_new_test_flow_analysis
-    ext_ProjectAnalyzer -.-&gt;|analyzer| main_new_test_flow_analysis
-    ext_MermaidGenerator -.-&gt;|generator| main_new_test_flow_analysis
-    ext_ProjectAnalyzer --&gt;|meta_file| ext_MermaidGenerator
-    ext_MermaidGenerator --&gt;|output| Done
+    ext_py_flow_mapper_analyzer_ProjectAnalyzer -.-&gt;|analyzer| main_new_test_flow_analysis
+    ext_py_flow_mapper_mermaid_generator_MermaidGenerator -.-&gt;|generator| main_new_test_flow_analysis
+    ext_py_flow_mapper_analyzer_ProjectAnalyzer --&gt;|meta_file| ext_py_flow_mapper_mermaid_generator_MermaidGenerator
+    ext_py_flow_mapper_mermaid_generator_MermaidGenerator --&gt;|output| Done
 </pre>
 </div>
 <p></p></figure><p></p>
@@ -309,24 +316,90 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 </section>
-<section id="example-3---analyze-pyflowmapper-itself-self-analysis" class="level2">
-<h2 class="anchored" data-anchor-id="example-3---analyze-pyflowmapper-itself-self-analysis">Example-3 - Analyze PyFlowMapper itself (self-analysis)</h2>
-<p>You can point PyFlowMapper at its own source code to generate a diagram of the internal architecture.</p>
+<section id="example-3---including-external-modules" class="level2">
+<h2 class="anchored" data-anchor-id="example-3---including-external-modules">Example-3 - Including External Modules</h2>
+<p>This example runs the analyzer via CLI (recommended for normal use).</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/ArunKoundinya/py-flow-mapper.git</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> py-flow-mapper</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#run</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install py-flow-mapper</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="analyze-1" class="level3">
 <h3 class="anchored" data-anchor-id="analyze-1">Analyze</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> analyze ./src/py-flow-mapper/ <span class="at">--entry-point</span> cli.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> analyze ./tests/example_external</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This creates</p>
+<ul>
+<li><code>./tests/example_external/project_meta.json</code>.</li>
+</ul>
+</section>
+<section id="generate-diagrams-1" class="level3">
+<h3 class="anchored" data-anchor-id="generate-diagrams-1">Generate diagrams</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> diagram ./tests/example_external/project_meta.json <span class="at">--include-external</span> pandas</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>An example Mermaid structure you might see:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph LR
+    subgraph main [main]
+        main_build_pipeline[build_pipeline]
+        main_load_data[load_data]
+        main_main[main]
+        main_train_and_eval[train_and_eval]
+    end
+    subgraph External [External]
+        ext_pandas[pandas]
+        ext_sklearn_compose_ColumnTransformer[ColumnTransformer]
+        ext_sklearn_linear_model_LogisticRegression[LogisticRegression]
+        ext_sklearn_metrics_accuracy_score[accuracy_score]
+        ext_sklearn_model_selection_train_test_split[train_test_split]
+        ext_sklearn_pipeline_Pipeline[Pipeline]
+        ext_sklearn_preprocessing_OneHotEncoder[OneHotEncoder]
+    end
+    main_main --&gt; main_load_data
+    main_main --&gt; |df| main_train_and_eval
+    main_load_data --&gt; |url| ext_pandas
+    main_train_and_eval --&gt; |X,y| ext_sklearn_model_selection_train_test_split
+    main_train_and_eval --&gt; main_build_pipeline
+    main_train_and_eval --&gt; |preds,y_test| ext_sklearn_metrics_accuracy_score
+    main_build_pipeline --&gt; ext_sklearn_compose_ColumnTransformer
+    main_build_pipeline --&gt; ext_sklearn_preprocessing_OneHotEncoder
+    main_build_pipeline --&gt; ext_sklearn_linear_model_LogisticRegression
+    main_build_pipeline --&gt; ext_sklearn_pipeline_Pipeline
+    main_load_data -.-&gt;|df| main_main
+    main_train_and_eval -.-&gt;|acc| main_main
+    ext_pandas -.-&gt;|df| main_load_data
+    main_build_pipeline -.-&gt;|pipe| main_train_and_eval
+    ext_sklearn_metrics_accuracy_score -.-&gt;|acc| main_train_and_eval
+    ext_sklearn_compose_ColumnTransformer -.-&gt;|preprocessor| main_build_pipeline
+    ext_sklearn_linear_model_LogisticRegression -.-&gt;|model| main_build_pipeline
+    ext_sklearn_pipeline_Pipeline -.-&gt;|pipe| main_build_pipeline
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="example-4---analyze-pyflowmapper-itself-self-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="example-4---analyze-pyflowmapper-itself-self-analysis">Example-4 - Analyze PyFlowMapper itself (self-analysis)</h2>
+<p>You can point PyFlowMapper at its own source code to generate a diagram of the internal architecture.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/ArunKoundinya/py-flow-mapper.git</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> py-flow-mapper</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#run</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install py-flow-mapper</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="analyze-2" class="level3">
+<h3 class="anchored" data-anchor-id="analyze-2">Analyze</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a> <span class="ex">pyflow</span> analyze ./src/py_flow_mapper/ <span class="at">--entry-point</span> cli.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This creates</p>
 <ul>
 <li><code>./src/py-flow-mapper/project_meta.json</code>.</li>
 </ul>
 </section>
-<section id="generate-diagrams-1" class="level3">
-<h3 class="anchored" data-anchor-id="generate-diagrams-1">Generate diagrams</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> diagram ./src/py-flow-mapper/project_meta.json</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="generate-diagrams-2" class="level3">
+<h3 class="anchored" data-anchor-id="generate-diagrams-2">Generate diagrams</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pyflow</span> diagram ./src/py-flow-mapper/project_meta.json</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A (large) diagram might resemble the following structure (excerpted example): ( Zoom-in &amp; Out Accordingly)</p>
 <div class="cell" data-layout-align="default">
 <div class="cell-output-display">
@@ -338,12 +411,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         mermaid_generator___init__[__init__]
         mermaid_generator__find_function_full_name[_find_function_full_name]
         mermaid_generator__load_metadata[_load_metadata]
+        mermaid_generator_external_root_name[external_root_name]
         mermaid_generator_generate_all_diagrams[generate_all_diagrams]
         mermaid_generator_generate_detailed_flow_graph[generate_detailed_flow_graph]
         mermaid_generator_is_camel_case[is_camel_case]
         mermaid_generator_is_fileish_arg[is_fileish_arg]
         mermaid_generator_is_outputish_call[is_outputish_call]
         mermaid_generator_keep_external[keep_external]
+        mermaid_generator_module_import_mapping[module_import_mapping]
         mermaid_generator_nid[nid]
         mermaid_generator_normalize_vars[normalize_vars]
         mermaid_generator_ordered_functions_from_entry[ordered_functions_from_entry]
@@ -393,11 +468,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         cli_show_structure[show_structure]
     end
     subgraph External [External]
-        ext_ArgumentParser[ArgumentParser]
+        ext_pathlib_Path[Path]
         Done((Done))
     end
     mermaid_generator___init__ --&gt; |metadata_path| mermaid_generator__load_metadata
+    mermaid_generator_generate_detailed_flow_graph --&gt; mermaid_generator_module_import_mapping
     mermaid_generator_generate_detailed_flow_graph --&gt; |call_name,callee,fn,n| mermaid_generator_short_label
+    mermaid_generator_generate_detailed_flow_graph --&gt; |call_name,callee,fileish_callee,p,producer| mermaid_generator_external_root_name
     mermaid_generator_generate_detailed_flow_graph --&gt; |base| mermaid_generator_is_camel_case
     mermaid_generator_generate_detailed_flow_graph --&gt; |c,call,current_module| mermaid_generator__find_function_full_name
     mermaid_generator_generate_detailed_flow_graph --&gt; |entry_key,target| mermaid_generator_visit
@@ -408,7 +485,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator_generate_detailed_flow_graph --&gt; mermaid_generator_ordered_functions_from_entry
     mermaid_generator_generate_detailed_flow_graph --&gt; |vars_passed,vars_used| mermaid_generator_normalize_vars
     mermaid_generator_generate_detailed_flow_graph --&gt; |a| mermaid_generator_is_fileish_arg
+    mermaid_generator_external_root_name --&gt; mermaid_generator_module_import_mapping
     mermaid_generator_keep_external --&gt; |call_name| mermaid_generator_short_label
+    mermaid_generator_keep_external --&gt; |call_name| mermaid_generator_external_root_name
+    mermaid_generator_keep_external --&gt; mermaid_generator_module_import_mapping
     mermaid_generator_keep_external --&gt; |base| mermaid_generator_is_camel_case
     mermaid_generator_resolve_internal --&gt; |call,current_module| mermaid_generator__find_function_full_name
     mermaid_generator_ordered_functions_from_entry --&gt; |c,current_module| mermaid_generator__find_function_full_name
@@ -416,12 +496,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator_visit --&gt; |c,current_module| mermaid_generator__find_function_full_name
     mermaid_generator_visit --&gt; |target| mermaid_generator_visit
     mermaid_generator_generate_all_diagrams --&gt; mermaid_generator_generate_detailed_flow_graph
+    utils_is_stdlib_module --&gt; |p| ext_pathlib_Path
     utils_get_project_structure --&gt; |exclude_dirs,item| utils_get_project_structure
     analyzer_analyze --&gt; analyzer__find_python_files
     analyzer_analyze --&gt; |file_path| analyzer__analyze_file
     analyzer_analyze --&gt; analyzer__build_data_flow_graph
     analyzer_analyze --&gt; analyzer__generate_metadata
     analyzer_analyze --&gt; |metadata| analyzer__save_metadata
+    analyzer__find_python_files --&gt; |root| ext_pathlib_Path
     analyzer__analyze_file --&gt; |rel_path| analyzer__path_to_module_name
     analyzer__analyze_file --&gt; |tree| mermaid_generator_visit
     analyzer__build_data_flow_graph --&gt; |call,called_func| analyzer__resolve_function_name
@@ -435,16 +517,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     analyzer_visit_Assign --&gt; analyzer__extract_call_info
     analyzer_visit_Call --&gt; |node| analyzer__extract_call_info
     analyzer_visit_Return --&gt; analyzer__extract_call_info
-    cli_main --&gt; ext_ArgumentParser
+    analyzer__extract_call_info --&gt; analyzer__get_attribute_name
     cli_main --&gt; |args| cli_analyze_project
     cli_main --&gt; |args| cli_generate_diagrams
     cli_main --&gt; |args| cli_show_structure
+    cli_analyze_project --&gt; ext_pathlib_Path
     cli_analyze_project --&gt; analyzer_analyze
+    cli_generate_diagrams --&gt; ext_pathlib_Path
     cli_generate_diagrams --&gt; mermaid_generator_generate_all_diagrams
+    cli_show_structure --&gt; ext_pathlib_Path
     cli_show_structure --&gt; |structure,value| cli_print_tree
     cli_show_structure --&gt; |project_path| utils_get_project_structure
     cli_print_tree --&gt; |value| cli_print_tree
     mermaid_generator_short_label -.-&gt;|base| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator_external_root_name -.-&gt;|root| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_ordered_functions_from_entry -.-&gt;|caller_order| mermaid_generator_generate_detailed_flow_graph
@@ -454,9 +540,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator_nid -.-&gt;|dst| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_resolve_internal -.-&gt;|internal_p| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_short_label -.-&gt;|base| mermaid_generator_keep_external
+    mermaid_generator_external_root_name -.-&gt;|root| mermaid_generator_keep_external
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_resolve_internal
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_ordered_functions_from_entry
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_visit
+    ext_pathlib_Path -.-&gt;|origin_path| utils_is_stdlib_module
     analyzer__find_python_files -.-&gt;|python_files| analyzer_analyze
     analyzer__generate_metadata -.-&gt;|metadata| analyzer_analyze
     analyzer__path_to_module_name -.-&gt;|module_name| analyzer__analyze_file
@@ -465,7 +553,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     analyzer__extract_call_info -.-&gt;|call_info| analyzer_visit_Assign
     analyzer__extract_call_info -.-&gt;|call_info| analyzer_visit_Call
     analyzer__extract_call_info -.-&gt;|call_info| analyzer_visit_Return
-    ext_ArgumentParser -.-&gt;|parser| cli_main
+    analyzer__get_attribute_name -.-&gt;|method_name| analyzer__extract_call_info
     analyzer_analyze -.-&gt;|metadata| cli_analyze_project
     mermaid_generator_generate_all_diagrams -.-&gt;|master_path| cli_generate_diagrams
     utils_get_project_structure -.-&gt;|structure| cli_show_structure
