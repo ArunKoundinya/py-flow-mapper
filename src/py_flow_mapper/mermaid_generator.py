@@ -2,12 +2,25 @@ import json
 from typing import Dict, List, Any
 from pathlib import Path
 
+COMMON_ALIAS_MAP = {
+    "pd": "pandas",
+    "np": "numpy",
+    "plt": "matplotlib",
+    "sns": "seaborn",
+    "sk": "sklearn",
+}
+
+
 class MermaidGenerator:
     """Generate Mermaid diagrams from project metadata with data flow."""
     
-    def __init__(self, metadata_path: Path):
+    def __init__(self, metadata_path: Path,include_external: str = ""):
         self.metadata = self._load_metadata(metadata_path)
         self.output_dir = metadata_path.parent
+        # https://github.com/ArunKoundinya/py-flow-mapper/issues/1 : forced external
+        self.force_external = {
+            x.strip() for x in include_external.split(",") if x.strip()
+        }
     
     def _load_metadata(self, metadata_path: Path) -> Dict[str, Any]:
         """Load metadata from JSON file."""
@@ -25,7 +38,7 @@ class MermaidGenerator:
         - Adds a generic pipeline edge between two external tool-like nodes when file-ish arguments suggest a handoff.
         - Adds a Done node when output-generation-like calls are detected.
         """
-        lines = ["```mermaid", "graph TD"]
+        lines = ["```mermaid", "graph LR"]
 
         function_map = self.metadata.get("function_map", {}) or {}
         internal_funcs = set(function_map.keys())
@@ -57,6 +70,25 @@ class MermaidGenerator:
             if not cleaned:
                 return ""
             return ",".join(sorted(set(cleaned)))
+        
+        current_module_ctx = ""
+
+        def module_import_mapping() -> dict:
+            return (modules.get(current_module_ctx, {}) or {}).get("import_mapping", {}) or {}
+
+        def external_root_name(call_name: str) -> str:
+            if not call_name:
+                return ""
+
+            root = call_name.split(".")[0]
+
+            # module-specific import mapping (from analyzer)
+            imp_map = module_import_mapping() or {}
+
+            # merge common aliases (module imports override defaults)
+            merged_map = {**COMMON_ALIAS_MAP, **imp_map}
+
+            return merged_map.get(root, root)
 
         # Keep the graph clean: ignore common builtins + attribute-noise
         NOISY_EXTERNAL = {
@@ -68,17 +100,28 @@ class MermaidGenerator:
         }
 
         def keep_external(call_name: str) -> bool:
-            """
-            Meaningful external nodes only:
-            - drop noise builtins
-            - drop internal classes
-            - drop dotted calls (obj.method) to avoid clutter
-            - keep CamelCase (tool-ish classes / constructors)
-            """
             if not call_name:
                 return False
 
             base = short_label(call_name)
+
+            # forced external always wins
+            root = external_root_name(call_name)
+            if root and root in self.force_external:
+                return True
+            if base in self.force_external:
+                return True
+
+            # ✅ NEW: module-specific import mapping
+            imp_map = module_import_mapping() or {}
+            if base in imp_map:
+                mapped = imp_map[base]
+                mapped_module = ".".join(mapped.split(".")[:-1])
+
+                if mapped_module in modules:
+                    return False
+
+                return True
 
             # internal class => NOT external
             if base in internal_classes:
@@ -91,6 +134,7 @@ class MermaidGenerator:
             if "." in call_name:
                 return False
 
+            # keep CamelCase (tool-ish classes / constructors)
             return is_camel_case(base)
 
         def resolve_internal(call: str, current_module: str) -> str:
@@ -130,6 +174,7 @@ class MermaidGenerator:
 
                 info = function_map.get(fn_key, {})
                 current_module = info.get("module", "") or ""
+                current_module_ctx = current_module
                 for c in (info.get("calls") or []):
                     target = self._find_function_full_name(c, current_module)
                     if target and target in function_map:
@@ -165,6 +210,7 @@ class MermaidGenerator:
 
         for _, info in function_map.items():
             current_module = info.get("module", "") or ""
+            current_module_ctx = current_module
 
             # prefer call_arguments keys
             call_args = info.get("call_arguments", {}) or {}
@@ -172,7 +218,7 @@ class MermaidGenerator:
                 if resolve_internal(callee, current_module):
                     continue
                 if keep_external(callee):
-                    external_nodes.add(callee)
+                    external_nodes.add(external_root_name(callee) or callee)
 
             # scan raw calls for Done + missed externals
             for callee in (info.get("calls") or []):
@@ -182,7 +228,7 @@ class MermaidGenerator:
                 if resolve_internal(callee, current_module):
                     continue
                 if keep_external(callee):
-                    external_nodes.add(callee)
+                    external_nodes.add(external_root_name(callee) or callee)
 
         if external_nodes or uses_done:
             lines.append("    subgraph External [External]")
@@ -201,6 +247,7 @@ class MermaidGenerator:
 
             info = function_map[caller]
             current_module = info.get("module", "") or ""
+            current_module_ctx = current_module
             src = nid(caller)
 
             call_args = info.get("call_arguments", {}) or {}
@@ -228,15 +275,16 @@ class MermaidGenerator:
                         lines.append(f"    {src} --> {nid(target_internal)}")
                 else:
                     if keep_external(callee):
+                        ext = external_root_name(callee) or callee
                         edge_key = (src, nid("ext:" + callee), label)
                         if edge_key in seen:
                             continue
                         seen.add(edge_key)
 
                         if label:
-                            lines.append(f"    {src} --> |{label}| {nid('ext:' + callee)}")
+                            lines.append(f"    {src} --> |{label}| {nid('ext:' + ext)}")
                         else:
-                            lines.append(f"    {src} --> {nid('ext:' + callee)}")
+                            lines.append(f"    {src} --> {nid('ext:' + ext)}")
 
         # ---------- data flow edges (return_assignments) ----------
         for fn in caller_order:
@@ -246,6 +294,7 @@ class MermaidGenerator:
             info = function_map[fn]
             dst = nid(fn)
             current_module = info.get("module", "") or ""
+            current_module_ctx = current_module
 
             return_assignments = info.get("return_assignments", {}) or {}
             for var_name, producers in return_assignments.items():
@@ -255,11 +304,13 @@ class MermaidGenerator:
                         lines.append(f"    {nid(internal_p)} -.->|{var_name}| {dst}")
                     else:
                         if keep_external(p):
-                            lines.append(f"    {nid('ext:' + p)} -.->|{var_name}| {dst}")
+                            ext = external_root_name(p) or p
+                            lines.append(f"    {nid('ext:' + ext)} -.->|{var_name}| {dst}")
 
         # ---------- pipeline heuristic: external tool A -> external tool B ----------
         for _, info in function_map.items():
             current_module = info.get("module", "") or ""
+            current_module_ctx = current_module
             calls = info.get("calls") or []
             call_args = info.get("call_arguments") or {}
 
@@ -287,7 +338,9 @@ class MermaidGenerator:
 
             vars_passed = call_args.get(fileish_callee, []) or []
             label = normalize_vars(vars_passed) or "value"
-            lines.append(f"    {nid('ext:' + producer)} -->|{label}| {nid('ext:' + fileish_callee)}")
+            prod_ext = external_root_name(producer) or producer
+            file_ext = external_root_name(fileish_callee) or fileish_callee
+            lines.append(f"    {nid('ext:' + prod_ext)} -->|{label}| {nid('ext:' + file_ext)}")
 
         # ---------- Done edge ----------
         if uses_done:

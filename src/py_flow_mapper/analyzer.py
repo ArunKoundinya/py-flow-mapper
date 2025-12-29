@@ -368,20 +368,21 @@ class ModuleVisitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node):
         """Process from ... import statements."""
         module_name = node.module or ""
-        
+
         for alias in node.names:
             full_import = f"{module_name}.{alias.name}" if module_name else alias.name
             self.imports.append(full_import)
-            
+
+            alias_name = alias.asname or alias.name
+            self.import_mapping[alias_name] = full_import
+
             if self._is_internal_import(module_name):
                 self.internal_imports.append(full_import)
-                # Map the imported function/class
-                alias_name = alias.asname or alias.name
-                self.import_mapping[alias_name] = full_import
             else:
                 self.external_imports.append(full_import)
-        
+
         self.generic_visit(node)
+
     
     def visit_FunctionDef(self, node):
         """Process function definitions with data flow analysis."""
@@ -560,7 +561,12 @@ class DataFlowAnalyzer(ast.NodeVisitor):
             return {'func_name': node.func.id, 'full_name': None}
         elif isinstance(node.func, ast.Attribute):
             # Handle module.function calls
-            method_name = node.func.attr
+            
+            # https://github.com/ArunKoundinya/py-flow-mapper/issues/1 : forced external
+            #method_name = node.func.attr
+
+            method_name = self._get_attribute_name(node.func)
+            
             return {'func_name': method_name, 'full_name': None}
 
         return None

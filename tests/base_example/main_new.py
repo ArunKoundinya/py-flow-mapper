@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 # Add the src directory to Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..","..", "src")))
 
 from py_flow_mapper.analyzer import ProjectAnalyzer
 from py_flow_mapper.mermaid_generator import MermaidGenerator

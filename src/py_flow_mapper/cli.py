@@ -24,7 +24,11 @@ def main():
     # Generate diagrams command
     diagram_parser = subparsers.add_parser('diagram', help='Generate diagrams from metadata')
     diagram_parser.add_argument('metadata', type=str, help='Path to metadata JSON file')
-    
+    # https://github.com/ArunKoundinya/py-flow-mapper/issues/1 : forced external
+    diagram_parser.add_argument( "--include-external", type=str, default="",
+                                help="Comma-separated list of external libraries to include in diagrams"
+                                )
+
     # Structure command
     struct_parser = subparsers.add_parser('structure', help='Show project structure')
     struct_parser.add_argument('path', type=str, help='Path to the project directory')
@@ -96,7 +100,7 @@ def generate_diagrams(args):
     
     print(f"Generating diagrams from: {metadata_path}")
     
-    generator = MermaidGenerator(metadata_path)
+    generator = MermaidGenerator(metadata_path,include_external=args.include_external)
     
     try:    
         master_path = generator.generate_all_diagrams()
