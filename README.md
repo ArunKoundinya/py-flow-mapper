@@ -1,15 +1,19 @@
 # PyFlowMapper
 [![Publish Python Package](https://github.com/ArunKoundinya/py-flow-mapper/actions/workflows/publish.yml/badge.svg)](https://github.com/ArunKoundinya/py-flow-mapper/actions/workflows/publish.yml)
 
-A simple Python tool that analyzes your code and shows how functions connect and pass data between each other.
+
+**PyFlowMapper** is a lightweight Python static-analysis tool that helps you understand **how functions connect and how data flows** across your codebase — without running your code.
+
+It is designed for developers who want fast architectural insight into new or existing Python projects.
 
 ## What It Does
 
-- Reads Python files without running them
-- Finds which functions call which other functions
-- Tracks how data flows from one function to another
-- Creates easy-to-understand diagrams
-- Works with Python 3.12+
+- Reads Python source files using AST (no execution)
+- Detects which functions call which others
+- Tracks return-value–based data flow between functions
+- Generates clear Mermaid diagrams
+- Works with **Python 3.12+**
+- Automatically ignores virtual environments
 
 ## Quick Install
 
@@ -20,7 +24,7 @@ cd py-flow-mapper
 pip install -e .
 
 # Or install directly
-pip install py-flow-mapper  # Coming soon!
+pip install py-flow-mapper
 ```
 
 ## How to Use
@@ -45,7 +49,8 @@ pyflow structure /path/to/your/project
 Shows a clean tree view of your project folders and files.
 
 ## What You Get
-Metadata File (project_meta.json)
+
+Metadata File — `project_meta.json`
 
 Contains:
 
@@ -54,10 +59,8 @@ Contains:
 - How data moves between functions
 - All imports and dependencies
 
-Three Types of Diagrams
-- Simple Flow Graph - Basic function connections
-- Detailed Flow Graph - Shows modules and data flow [ Recommended ]
-- Call Graph - Just function calls
+One Types of Diagram
+- Detailed Flow Graph - Shows modules and data flow
 
 ## Requirements
 - Python 3.12 or higher
@@ -70,7 +73,7 @@ Three Types of Diagrams
 | `pyflow diagram /path/to/project/project_meta.json` | Make diagrams |
 | `pyflow structure /path/to/project` | Show folder structure |
 | `pyflow --help` | Get help |
-| `pyflow --version` | Check version |
+| `pyflow version` | Check version |
 
 ## Features
 
@@ -87,3 +90,17 @@ Three Types of Diagrams
 - Use `--entry-point` if your main file isn't `main.py`  
 - View diagrams in VS Code or GitHub for best results  
 - The tool ignores `venv/`, `.venv/`, and other common exclude folders  
+
+## Full Documentation
+
+Full documentation (including examples and architecture diagrams) is available in the `docs/` folder and built using Quarto.
+
+## ⚠ Limitations
+
+PyFlowMapper uses static analysis. It may not fully resolve:
+
+- Runtime imports
+- Heavy metaprogramming
+- Highly dynamic call patterns
+
+Despite this, it provides a strong and reliable architectural baseline for most Python projects.
