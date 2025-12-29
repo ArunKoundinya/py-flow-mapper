@@ -13,157 +13,301 @@ class MermaidGenerator:
         """Load metadata from JSON file."""
         with open(metadata_path, 'r', encoding='utf-8') as f:
             return json.load(f)
-    
-    def generate_flow_graph(self, output_file: str = "flow_graph.mmd") -> str:
-        """Generate Mermaid flow graph showing data flow between functions."""
-        lines = [
-            "```mermaid",
-            "graph TD",
-        ]
         
-        function_map = self.metadata.get('function_map', {})
-        data_flow_edges = self.metadata.get('data_flow_edges', [])
-        
-        # Add nodes with simple names
-        node_names = {}
-        for i, func_name in enumerate(function_map.keys()):
-            simple_name = func_name.split('.')[-1]
-            node_id = f"func_{i}"
-            node_names[func_name] = node_id
-            lines.append(f"    {node_id}[{simple_name}]")
-        
-        # Add direct call edges (black arrows)
-        for func_name, func_info in function_map.items():
-            source_id = node_names[func_name]
-            for call in func_info.get('calls', []):
-                # Find the called function
-                target_func = self._find_function_full_name(call, func_info.get('module', ''))
-                if target_func and target_func in node_names:
-                    target_id = node_names[target_func]
-                    lines.append(f"    {source_id} --> {target_id}")
-        
-        # Add data flow edges (dashed arrows with labels)
-        for edge in data_flow_edges:
-            source = edge.get('source')
-            target = edge.get('target')
-            variable = edge.get('variable', 'result')
-            
-            if source in node_names and target in node_names:
-                source_id = node_names[source]
-                target_id = node_names[target]
-                lines.append(f"    {source_id} -.->|{variable}| {target_id}")
-        
-        lines.append("```")
-        
-        content = "\n".join(lines)
-        
-        # Save to file
-        output_path = self.output_dir / output_file
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        print(f"✓ Flow graph generated: {output_path}")
-        return content
-    
+      
     def generate_detailed_flow_graph(self, output_file: str = "detailed_flow.mmd") -> str:
-        """Generate detailed flow graph showing both calls and data flow with modules."""
-        lines = [
-            "```mermaid",
-            "graph TD",
-        ]
-        
-        function_map = self.metadata.get('function_map', {})
-        modules = self.metadata.get('modules', {})
-        
-        # Group functions by module
+        """
+        Blended detailed flow graph (stable + readable):
+        - Internal functions grouped by module subgraphs.
+        - Call edges are emitted in main-flow order (DFS from entry), with labels from call_arguments when available.
+        - Data flow uses return_assignments (dashed edges with variable labels).
+        - External nodes included only when meaningful (filtered heuristics).
+        - Adds a generic pipeline edge between two external tool-like nodes when file-ish arguments suggest a handoff.
+        - Adds a Done node when output-generation-like calls are detected.
+        """
+        lines = ["```mermaid", "graph TD"]
+
+        function_map = self.metadata.get("function_map", {}) or {}
+        internal_funcs = set(function_map.keys())
+        modules = self.metadata.get("modules", {}) or {}
+
+        # ---- internal class names (avoid misclassifying internal classes as "External") ----
+        internal_classes = set()
+        for mod_info in modules.values():
+            for c in (mod_info.get("classes") or []):
+                cname = c.get("name")
+                if cname:
+                    internal_classes.add(cname)
+
+        # ---------- helpers ----------
+        def nid(name: str) -> str:
+            # Mermaid-safe id
+            return (name or "").replace(".", "_").replace(":", "_").replace("-", "_")
+
+        def short_label(name: str) -> str:
+            return (name or "").split(".")[-1]
+
+        def is_camel_case(s: str) -> bool:
+            return bool(s) and s[0].isupper() and any(c.islower() for c in s[1:])
+
+        def normalize_vars(vars_used) -> str:
+            if not vars_used:
+                return ""
+            cleaned = [v for v in vars_used if isinstance(v, str) and v.isidentifier()]
+            if not cleaned:
+                return ""
+            return ",".join(sorted(set(cleaned)))
+
+        # Keep the graph clean: ignore common builtins + attribute-noise
+        NOISY_EXTERNAL = {
+            "print", "open", "len", "str", "int", "float", "bool", "dict", "list", "set", "tuple",
+            "items", "get", "range", "enumerate", "sorted", "sum", "min", "max", "any", "all",
+            "read", "write", "exists", "glob", "join", "split", "format",
+            "traceback", "print_exc",
+            "Path",
+        }
+
+        def keep_external(call_name: str) -> bool:
+            """
+            Meaningful external nodes only:
+            - drop noise builtins
+            - drop internal classes
+            - drop dotted calls (obj.method) to avoid clutter
+            - keep CamelCase (tool-ish classes / constructors)
+            """
+            if not call_name:
+                return False
+
+            base = short_label(call_name)
+
+            # internal class => NOT external
+            if base in internal_classes:
+                return False
+
+            if base in NOISY_EXTERNAL:
+                return False
+
+            # dotted calls like obj.method: too noisy at this level
+            if "." in call_name:
+                return False
+
+            return is_camel_case(base)
+
+        def resolve_internal(call: str, current_module: str) -> str:
+            # First try your normal resolver
+            target = self._find_function_full_name(call, current_module)
+            if target and target in internal_funcs:
+                return target
+
+            # ✅ NEW: if call is like "obj.method", try to map by method name
+            if "." in (call or ""):
+                method = call.split(".")[-1]
+                matches = [k for k in internal_funcs if k.endswith("." + method)]
+                if len(matches) == 1:
+                    return matches[0]
+
+            return ""
+
+
+        def is_outputish_call(name: str) -> bool:
+            n = (name or "").lower()
+            return n.startswith(("generate", "render", "export")) or ("graph" in n) or ("diagram" in n)
+
+        def is_fileish_arg(arg: str) -> bool:
+            a = (arg or "").lower()
+            return any(k in a for k in ("meta", "json", "yaml", "yml", "config", "path", "file"))
+
+        def ordered_functions_from_entry(entry_key: str) -> list[str]:
+            """DFS from entry, preserving call order from metadata."""
+            seen = set()
+            order = []
+
+            def visit(fn_key: str):
+                if fn_key in seen:
+                    return
+                seen.add(fn_key)
+                order.append(fn_key)
+
+                info = function_map.get(fn_key, {})
+                current_module = info.get("module", "") or ""
+                for c in (info.get("calls") or []):
+                    target = self._find_function_full_name(c, current_module)
+                    if target and target in function_map:
+                        visit(target)
+
+            if entry_key in function_map:
+                visit(entry_key)
+
+            for fn in function_map.keys():
+                if fn not in seen:
+                    order.append(fn)
+
+            return order
+
+        # ---------- group internal functions by module ----------
         module_functions = {}
         for func_name, func_info in function_map.items():
-            module = func_info.get('module', '')
-            if module not in module_functions:
-                module_functions[module] = []
-            module_functions[module].append(func_name)
-        
-        # Create subgraphs for each module
-        for module_name, funcs in module_functions.items():
-            if funcs:  # Only create subgraph if there are functions
-                short_module = module_name.split('.')[-1] or module_name
-                lines.append(f"    subgraph {short_module} [{short_module}]")
-                
-                for func_name in funcs:
-                    simple_name = func_name.split('.')[-1]
-                    lines.append(f"        {func_name.replace('.', '_')}[{simple_name}]")
-                
-                lines.append("    end")
-        
-        # Add call edges
-        for caller, info in function_map.items():
-            call_args = info.get("call_arguments", {})
+            module = func_info.get("module", "") or "module"
+            module_functions.setdefault(module, []).append(func_name)
 
-            for callee, vars_used in call_args.items():
-                target = self._find_function_full_name(callee, info.get("module", ""))
-                if not target or target not in function_map:
+        for module_name, funcs in module_functions.items():
+            if not funcs:
+                continue
+            short_module = module_name.split(".")[-1] or module_name
+            lines.append(f"    subgraph {nid(short_module)} [{short_module}]")
+            for fn in sorted(funcs):
+                lines.append(f"        {nid(fn)}[{short_label(fn)}]")
+            lines.append("    end")
+
+        # ---------- collect external nodes + Done detection ----------
+        external_nodes = set()
+        uses_done = False
+
+        for _, info in function_map.items():
+            current_module = info.get("module", "") or ""
+
+            # prefer call_arguments keys
+            call_args = info.get("call_arguments", {}) or {}
+            for callee in call_args.keys():
+                if resolve_internal(callee, current_module):
+                    continue
+                if keep_external(callee):
+                    external_nodes.add(callee)
+
+            # scan raw calls for Done + missed externals
+            for callee in (info.get("calls") or []):
+                if is_outputish_call(short_label(callee)):
+                    uses_done = True
+
+                if resolve_internal(callee, current_module):
+                    continue
+                if keep_external(callee):
+                    external_nodes.add(callee)
+
+        if external_nodes or uses_done:
+            lines.append("    subgraph External [External]")
+            for n in sorted(external_nodes):
+                lines.append(f"        {nid('ext:' + n)}[{short_label(n)}]")
+            if uses_done:
+                lines.append("        Done((Done))")
+            lines.append("    end")
+
+        # ---------- call edges (internal -> internal/external), ordered from entry ----------
+        caller_order = ordered_functions_from_entry("main.main")
+
+        for caller in caller_order:
+            if caller not in function_map:
+                continue
+
+            info = function_map[caller]
+            current_module = info.get("module", "") or ""
+            src = nid(caller)
+
+            call_args = info.get("call_arguments", {}) or {}
+            seen = set()
+
+            for callee in (info.get("calls") or []):
+                if not callee:
                     continue
 
-                source_id = caller.replace(".", "_")
-                target_id = target.replace(".", "_")
+                target_internal = resolve_internal(callee, current_module)
 
-                label = ",".join(sorted(set(vars_used)))
-                lines.append(f"    {source_id} --> |{label}| {target_id}")
+                # label (if any)
+                vars_used = call_args.get(callee) or (call_args.get(target_internal) if target_internal else []) or []
+                label = normalize_vars(vars_used)
 
-        
-        # Add data flow edges from return assignments
-        for func_name, func_info in function_map.items():
-            return_assignments = func_info.get('return_assignments', {})
-            for var_name, called_funcs in return_assignments.items():
-                for called_func in called_funcs:
-                    target_func = self._find_function_full_name(called_func, func_info.get('module', ''))
-                    if target_func:
-                        source_id = target_func.replace('.', '_')
-                        target_id = func_name.replace('.', '_')
-                        lines.append(f"    {source_id} -.->|{var_name}| {target_id}")
-        
+                if target_internal:
+                    edge_key = (src, nid(target_internal), label)
+                    if edge_key in seen:
+                        continue
+                    seen.add(edge_key)
+
+                    if label:
+                        lines.append(f"    {src} --> |{label}| {nid(target_internal)}")
+                    else:
+                        lines.append(f"    {src} --> {nid(target_internal)}")
+                else:
+                    if keep_external(callee):
+                        edge_key = (src, nid("ext:" + callee), label)
+                        if edge_key in seen:
+                            continue
+                        seen.add(edge_key)
+
+                        if label:
+                            lines.append(f"    {src} --> |{label}| {nid('ext:' + callee)}")
+                        else:
+                            lines.append(f"    {src} --> {nid('ext:' + callee)}")
+
+        # ---------- data flow edges (return_assignments) ----------
+        for fn in caller_order:
+            if fn not in function_map:
+                continue
+
+            info = function_map[fn]
+            dst = nid(fn)
+            current_module = info.get("module", "") or ""
+
+            return_assignments = info.get("return_assignments", {}) or {}
+            for var_name, producers in return_assignments.items():
+                for p in (producers or []):
+                    internal_p = resolve_internal(p, current_module)
+                    if internal_p:
+                        lines.append(f"    {nid(internal_p)} -.->|{var_name}| {dst}")
+                    else:
+                        if keep_external(p):
+                            lines.append(f"    {nid('ext:' + p)} -.->|{var_name}| {dst}")
+
+        # ---------- pipeline heuristic: external tool A -> external tool B ----------
+        for _, info in function_map.items():
+            current_module = info.get("module", "") or ""
+            calls = info.get("calls") or []
+            call_args = info.get("call_arguments") or {}
+
+            meaningful = []
+            for c in calls:
+                if c and keep_external(c) and not resolve_internal(c, current_module):
+                    if c not in meaningful:
+                        meaningful.append(c)
+
+            if len(meaningful) < 2:
+                continue
+
+            fileish_callee = None
+            for callee, args in call_args.items():
+                if keep_external(callee) and any(is_fileish_arg(a) for a in (args or []) if isinstance(a, str)):
+                    fileish_callee = callee
+                    break
+
+            if not fileish_callee:
+                continue
+
+            producer = next((x for x in meaningful if x != fileish_callee), None)
+            if not producer:
+                continue
+
+            vars_passed = call_args.get(fileish_callee, []) or []
+            label = normalize_vars(vars_passed) or "value"
+            lines.append(f"    {nid('ext:' + producer)} -->|{label}| {nid('ext:' + fileish_callee)}")
+
+        # ---------- Done edge ----------
+        if uses_done:
+            tool_like = [
+                n for n in external_nodes
+                if any(k in short_label(n) for k in ("Generator", "Exporter", "Renderer", "Writer"))
+            ]
+            if tool_like:
+                lines.append(f"    {nid('ext:' + sorted(tool_like)[-1])} -->|output| Done")
+
         lines.append("```")
-        
+
         content = "\n".join(lines)
-        
         output_path = self.output_dir / output_file
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         print(f"✓ Detailed flow graph generated: {output_path}")
         return content
-    
-    def generate_call_graph(self, output_file: str = "call_graph.mmd") -> str:
-        """Generate Mermaid call graph (simplified version)."""
-        lines = [
-            "```mermaid",
-            "graph TD",
-        ]
-        
-        function_map = self.metadata.get('function_map', {})
-        
-        # Add nodes with module prefixes
-        for func_name in function_map:
-            lines.append(f"    {func_name.replace('.', '_')}[{func_name}]")
-        
-        # Add edges
-        for func_name, func_info in function_map.items():
-            for call in func_info.get('calls', []):
-                target_func = self._find_function_full_name(call, func_info.get('module', ''))
-                if target_func and target_func in function_map:
-                    source_id = func_name.replace('.', '_')
-                    target_id = target_func.replace('.', '_')
-                    lines.append(f"    {source_id} --> {target_id}")
-        
-        lines.append("```")
-        
-        content = "\n".join(lines)
-        
-        output_path = self.output_dir / output_file
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        return content
+
     
     def _find_function_full_name(self, func_name: str, current_module: str) -> str:
         """Find the full name of a function in the metadata."""
@@ -188,9 +332,7 @@ class MermaidGenerator:
     def generate_all_diagrams(self):
         """Generate all available diagrams."""
         diagrams = {
-            "flow_graph": self.generate_flow_graph(),
             "detailed_flow": self.generate_detailed_flow_graph(),
-            "call_graph": self.generate_call_graph()
         }
         
         # Create a master markdown file

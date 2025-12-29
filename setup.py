@@ -5,13 +5,19 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="py-flow-mapper",
-    version="0.1.0b0.dev",
+    version="1.0b1.dev",
     author="Arun Koundinya Parasa",
     author_email="parasa.arunkoundinya@gmail.com",
     description="Python project analyzer and visualization tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ArunKoundinya/py-flow-mapper",
+    project_urls={
+        "Documentation": "https://arunkoundinya.github.io/py-flow-mapper/",
+        "Source": "https://github.com/ArunKoundinya/py-flow-mapper",
+        "Issues": "https://github.com/ArunKoundinya/py-flow-mapper/issues",
+        "Changelog": "https://github.com/ArunKoundinya/py-flow-mapper/releases",
+    },
     license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},

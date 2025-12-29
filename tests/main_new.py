@@ -22,7 +22,7 @@ from .utils import helper_function
 from .calculator import Calculator
 import json
 
-def main():
+def main_final():
     """Main entry point - shows data flow between functions."""
     print("Starting the application...")
     
@@ -136,23 +136,6 @@ def test_flow_analysis():
     print("\n✓ Analysis Complete")
     print(f"\nFlow Analysis Results:")
     
-    # Show function map with return assignments
-    function_map = metadata.get('function_map', {})
-    print(f"\nFunctions with Return Value Flow:")
-    
-    for func_name, func_info in function_map.items():
-        if func_info.get('return_assignments'):
-            print(f"\n{func_name}:")
-            for var, calls in func_info['return_assignments'].items():
-                print(f"  {var} ← {calls}")
-    
-    # Show data flow edges
-    data_flow = metadata.get('data_flow_edges', [])
-    if data_flow:
-        print(f"\nData Flow Edges ({len(data_flow)} found):")
-        for edge in data_flow:
-            print(f"  {edge['source']} --[{edge['variable']}]--> {edge['target']}")
-    
     # Generate flow graph
     meta_file = project_dir / "project_meta.json"
     generator = MermaidGenerator(meta_file)
@@ -161,11 +144,8 @@ def test_flow_analysis():
     print("Generating Flow Diagrams")
     print("=" * 60)
     
-    # Generate the flow graph you wanted
-    flow_graph = generator.generate_flow_graph()
-    
     # Also generate detailed flow
-    detailed_graph = generator.generate_detailed_flow_graph()
+    _ = generator.generate_detailed_flow_graph()
     
     # Show the generated flow graph
     print("\nGenerated Flow Graph (flow_graph.mmd):")
@@ -178,30 +158,6 @@ def test_flow_analysis():
     return metadata, project_dir
 
 
-def show_expected_output():
-    """Show the expected output format."""
-    print("\n" + "=" * 60)
-    print("Expected Output Format")
-    print("=" * 60)
-    
-    expected = '''graph TD
-    main.main[main]
-    main.process_data
-    utils.helper_function
-    calculator.add
-    main.main --> utils.helper_function
-    main.main --> calculator.add
-    utils.helper_function --[result]--> main.process_data'''
-    
-    print("\nThe analyzer should produce graphs like this:")
-    print(expected)
-    
-    print("\nKey features:")
-    print("1. Shows which functions call which other functions")
-    print("2. Shows how return values flow between functions")
-    print("3. Uses dotted/dashed lines for data flow")
-    print("4. Labels edges with variable names")
-
 
 def main():
     """Main test function."""
@@ -212,9 +168,7 @@ def main():
         # Test the flow analysis
         metadata, project_dir = test_flow_analysis()
         
-        # Show expected output
-        show_expected_output()
-        
+        # Show expected output        
         print("\n" + "=" * 60)
         print("Test Complete!")
         print("=" * 60)

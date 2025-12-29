@@ -6,6 +6,7 @@ from typing import Optional
 from .analyzer import ProjectAnalyzer
 from .mermaid_generator import MermaidGenerator
 from .utils import get_project_structure
+from . import __version__,__author__,__github__,__gitpages__
 
 def main():
     parser = argparse.ArgumentParser(
@@ -19,14 +20,10 @@ def main():
     analyze_parser.add_argument('path', type=str, help='Path to the project directory')
     analyze_parser.add_argument('--entry-point', type=str, default=None, 
                                help='Entry point file (default: auto-detect)')
-    analyze_parser.add_argument('--output', '-o', type=str, default='project_meta.json',
-                               help='Output JSON file name')
     
     # Generate diagrams command
     diagram_parser = subparsers.add_parser('diagram', help='Generate diagrams from metadata')
     diagram_parser.add_argument('metadata', type=str, help='Path to metadata JSON file')
-    diagram_parser.add_argument('--type', '-t', type=str, choices=['all', 'call', 'import', 'class', 'dep'],
-                               default='all', help='Type of diagram to generate')
     
     # Structure command
     struct_parser = subparsers.add_parser('structure', help='Show project structure')
@@ -44,7 +41,11 @@ def main():
     elif args.command == 'structure':
         show_structure(args)
     elif args.command == 'version':
-        print("PyFlowMapper v0.1.0")
+        print(f"PyFlowMapper v{__version__}")
+        print(f"Author for this Package: {__author__}")
+        print(f"GitHub:{__github__}")
+        print(f"Help Documents: {__gitpages__}")
+
     else:
         parser.print_help()
 
@@ -98,9 +99,8 @@ def generate_diagrams(args):
     generator = MermaidGenerator(metadata_path)
     
     try:    
-        if args.type == 'all':
-            master_path = generator.generate_detailed_flow_graph()
-            print(f"\nAll diagrams generated in: {master_path}")
+        master_path = generator.generate_all_diagrams()
+        print(f"\nAll diagrams generated in: {master_path}")
         
         print("\nDiagrams are ready! You can view them:")
         print("1. Copy the content to Mermaid Live Editor: https://mermaid.live/")
