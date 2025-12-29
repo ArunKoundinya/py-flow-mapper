@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Py-Flow"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Main Documentation
+      - href: examples.qmd
+        text: In House Examples
+    right:
+      - icon: github
+        href: https://github.com/ArunKoundinya/py-flow-mapper
+        aria-label: GitHub
+
+  page-footer:
+    left: "© 2025 Arun Koundinya Parasa"
+    right: "Built with Quarto"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    code-copy: true

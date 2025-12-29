@@ -1,0 +1,83 @@
+---
+title: "PyFlowMapper"
+subtitle: "Analyze Python projects and visualize how functions connect and pass data"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    theme: cosmo
+---
+
+PyFlowMapper is a lightweight static analysis tool that reads your Python source code (without running it) and produces metadata + diagrams that explain **which functions call which**, and **how values move through your project**.
+
+## Why PyFlowMapper?
+
+Most call-graph tools show *connections*, but not the *data story*.
+
+PyFlowMapper goes a step further by tracking common pipeline-style data flow between functions, helping you understand real execution intent and not just structure.
+
+## What It Does
+
+- Parses Python code using AST (no execution)
+- Detects functions, classes, and imports
+- Builds call graphs and reverse-call maps
+- Tracks basic data flow via return assignments
+- Outputs metadata and Mermaid diagram.
+
+## Requirements
+
+- Python 3.12+
+
+## Install
+
+```bash
+git clone https://github.com/ArunKoundinya/py-flow-mapper.git
+cd py-flow-mapper
+pip install -e .
+```
+or 
+
+```bash
+pip install py-flow-mapper
+```
+
+## Quickstart
+
+### Analyze a Project
+
+```bash
+pyflow analyze /path/to/project
+```
+
+Creates `project_meta.json`.
+
+### Generate Diagrams
+
+```bash
+pyflow diagram /path/to/project/project_meta.json
+```
+
+### View Structure
+
+```bash
+pyflow structure /path/to/project
+```
+
+## Python API
+
+```python
+from pyflowmapper import ProjectAnalyzer, MermaidGenerator
+
+analyzer = ProjectAnalyzer(base_path="/path/to/project", entry_point="main.py")
+analyzer.analyze()
+
+generator = MermaidGenerator("/path/to/project/project_meta.json")
+generator.generate_all_diagrams()
+```
+
+## Tips
+
+- Start small to understand output
+- Use `--entry-point` if main file is not `main.py`
+- Mermaid diagrams render well in GitHub and Quarto

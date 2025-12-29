@@ -206,3 +206,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+#Quarto Documents
+docs/_site/*
+docs/.quarto/*

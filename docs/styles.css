@@ -1,0 +1,171 @@
+/* css styles */
+
+/* =========================
+   Global typography tweaks
+   ========================= */
+
+body {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  margin-top: 2.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+h3 {
+  margin-top: 2rem;
+}
+
+/* =========================
+   Navbar
+   ========================= */
+
+.navbar {
+  font-size: 0.95rem;
+}
+
+.navbar-brand {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* =========================
+   Code blocks & inline code
+   ========================= */
+
+pre {
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+code {
+  font-size: 0.9em;
+  background-color: #f6f8fa;
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Improve copy button placement */
+.code-copy-button {
+  border-radius: 6px;
+}
+
+/* =========================
+   Mermaid diagrams
+   ========================= */
+
+.mermaid {
+  background-color: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+/* Make Mermaid text readable */
+.mermaid text {
+  font-size: 13px;
+}
+
+/* =========================
+   Callout blocks
+   ========================= */
+
+.callout {
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.callout-title {
+  font-weight: 600;
+}
+
+/* Tip callout */
+.callout-tip {
+  border-left: 4px solid #0d6efd;
+}
+
+/* Note callout */
+.callout-note {
+  border-left: 4px solid #6c757d;
+}
+
+/* Warning callout */
+.callout-warning {
+  border-left: 4px solid #dc3545;
+}
+
+/* =========================
+   Tables
+   ========================= */
+
+table {
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+table th,
+table td {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #dee2e6;
+}
+
+/* =========================
+   Footer
+   ========================= */
+
+.page-footer {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* =========================
+   Links
+   ========================= */
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   Wide diagrams / content
+   ========================= */
+
+@media (min-width: 1200px) {
+  .page-columns {
+    grid-template-columns: minmax(0, 1fr) 900px minmax(0, 1fr);
+  }
+}
