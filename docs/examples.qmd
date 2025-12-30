@@ -285,7 +285,7 @@ graph LR
     mermaid_generator_generate_detailed_flow_graph --> |call_name,callee,fn,n| mermaid_generator_short_label
     mermaid_generator_generate_detailed_flow_graph --> |call_name,callee,current_module,fileish_callee,p,producer| mermaid_generator_external_root_name
     mermaid_generator_generate_detailed_flow_graph --> |base| mermaid_generator_is_camel_case
-    mermaid_generator_generate_detailed_flow_graph --> |c,call,current_module| mermaid_generator__find_function_full_name
+    mermaid_generator_generate_detailed_flow_graph --> |c,call,candidate,current_module,mapped| mermaid_generator__find_function_full_name
     mermaid_generator_generate_detailed_flow_graph --> |entry_key,target| mermaid_generator_visit
     mermaid_generator_generate_detailed_flow_graph --> |caller,fn,internal_p,short_module,target_internal| mermaid_generator_nid
     mermaid_generator_generate_detailed_flow_graph --> |c,callee,current_module,p| mermaid_generator_resolve_internal
@@ -299,7 +299,8 @@ graph LR
     mermaid_generator_keep_external --> |call_name,current_module| mermaid_generator_external_root_name
     mermaid_generator_keep_external --> |current_module| mermaid_generator_module_import_mapping
     mermaid_generator_keep_external --> |base| mermaid_generator_is_camel_case
-    mermaid_generator_resolve_internal --> |call,current_module| mermaid_generator__find_function_full_name
+    mermaid_generator_resolve_internal --> |call,candidate,current_module,mapped| mermaid_generator__find_function_full_name
+    mermaid_generator_resolve_internal --> |current_module| mermaid_generator_module_import_mapping
     mermaid_generator_ordered_functions_from_entry --> |c,current_module| mermaid_generator__find_function_full_name
     mermaid_generator_ordered_functions_from_entry --> |entry_key,target| mermaid_generator_visit
     mermaid_generator_visit --> |c,current_module| mermaid_generator__find_function_full_name
@@ -340,8 +341,11 @@ graph LR
     cli_print_tree --> |value| cli_print_tree
     mermaid_generator_module_import_mapping -.->|imp_map| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_module_import_mapping -.->|imp_map| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator_module_import_mapping -.->|imp_map| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_short_label -.->|base| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_external_root_name -.->|root| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator__find_function_full_name -.->|target| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator__find_function_full_name -.->|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator__find_function_full_name -.->|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator__find_function_full_name -.->|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_ordered_functions_from_entry -.->|caller_order| mermaid_generator_generate_detailed_flow_graph
@@ -355,6 +359,9 @@ graph LR
     mermaid_generator_external_root_name -.->|root| mermaid_generator_keep_external
     mermaid_generator_module_import_mapping -.->|imp_map| mermaid_generator_keep_external
     mermaid_generator__find_function_full_name -.->|target| mermaid_generator_resolve_internal
+    mermaid_generator__find_function_full_name -.->|target| mermaid_generator_resolve_internal
+    mermaid_generator__find_function_full_name -.->|target| mermaid_generator_resolve_internal
+    mermaid_generator_module_import_mapping -.->|imp_map| mermaid_generator_resolve_internal
     mermaid_generator__find_function_full_name -.->|target| mermaid_generator_ordered_functions_from_entry
     mermaid_generator__find_function_full_name -.->|target| mermaid_generator_visit
     ext_pathlib_Path -.->|origin_path| utils_is_stdlib_module

@@ -124,13 +124,42 @@ class MermaidGenerator:
             return is_camel_case(base)
 
         def resolve_internal(call: str, current_module: str) -> str:
-            # First try your normal resolver
+            call = call or ""
+
+            # 1) existing resolver
             target = self._find_function_full_name(call, current_module)
             if target and target in internal_funcs:
                 return target
 
-            # ✅ NEW: if call is like "obj.method", try to map by method name
-            if "." in (call or ""):
+            imp_map = module_import_mapping(current_module)
+
+            # 2) If call is a bare name imported via "from X import name"
+            # import_mapping might contain:  name -> "pkg.mod.name"
+            if call in imp_map:
+                mapped = imp_map[call]
+                if mapped in internal_funcs:
+                    return mapped
+                # if mapped is "pkg.mod.name", try resolving it (or its tail)
+                target = self._find_function_full_name(mapped, current_module)
+                if target and target in internal_funcs:
+                    return target
+
+            # 3) If call is "alias.something", rewrite alias using import_mapping
+            # import_mapping might contain: alias -> "pkg.mod"
+            if "." in call:
+                root, rest = call.split(".", 1)
+                if root in imp_map:
+                    mapped_root = imp_map[root]
+                    # If mapping is to a specific object like "pkg.mod.func",
+                    # treat it as root too (best-effort)
+                    candidate = f"{mapped_root}.{rest}"
+                    if candidate in internal_funcs:
+                        return candidate
+                    target = self._find_function_full_name(candidate, current_module)
+                    if target and target in internal_funcs:
+                        return target
+
+                # 4) your existing "obj.method" heuristic
                 method = call.split(".")[-1]
                 matches = [k for k in internal_funcs if k.endswith("." + method)]
                 if len(matches) == 1:

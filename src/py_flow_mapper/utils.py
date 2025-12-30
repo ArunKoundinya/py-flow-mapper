@@ -130,7 +130,7 @@ def get_project_structure(base_path: Path, exclude_dirs: List[str] = None) -> Di
             "node_modules", "site-packages",
             "docs", "doc", "notebooks", ".ipynb_checkpoints",
             "models", "outputs", "results",
-            "logs", "tmp", "temp",
+            "logs", "tmp", "temp","log","cache"
         ]
 
     exclude_set = set(exclude_dirs)
