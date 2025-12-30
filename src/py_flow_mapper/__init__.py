@@ -2,7 +2,7 @@
 PyFlowMapper - A Python project analyzer and visualization tool.
 """
 
-__version__ = "0.1.0b6.dev"
+__version__ = "0.1.0b7.dev"
 __author__ = "Arun Koundinya Parasa"
 __description__ = "Analyze Python projects and generate dependency graphs"
 __github__ = "https://github.com/ArunKoundinya/py-flow-mapper"
