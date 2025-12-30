@@ -527,13 +527,16 @@ class DataFlowAnalyzer(ast.NodeVisitor):
             if isinstance(node.value, ast.Call):
                 call_info = self._extract_call_info(node.value)
                 if call_info:
-                    self.return_assignments.setdefault(var_name, []).append(call_info["func_name"])
+                    func_name = call_info["func_name"]
+
+                    if func_name not in self.calls:
+                        self.calls.append(func_name)
+                    self.return_assignments.setdefault(var_name, []).append(func_name)
 
             elif isinstance(node.value, ast.Name):
                 pass
 
         self.generic_visit(node)
-
     
     def visit_Call(self, node):
         call_info = self._extract_call_info(node)
