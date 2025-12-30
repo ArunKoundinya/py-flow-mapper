@@ -521,21 +521,24 @@ class DataFlowAnalyzer(ast.NodeVisitor):
         
     def visit_Assign(self, node):
         """Track assignments of function return values."""
-        if node.targets and isinstance(node.targets[0], ast.Name):
+        # Get the variable name being assigned to
+        if isinstance(node.targets[0], ast.Name):
             var_name = node.targets[0].id
-
+            
+            # Check if the value is a function call
             if isinstance(node.value, ast.Call):
                 call_info = self._extract_call_info(node.value)
                 if call_info:
-                    func_name = call_info["func_name"]
-
-                    if func_name not in self.calls:
-                        self.calls.append(func_name)
-                    self.return_assignments.setdefault(var_name, []).append(func_name)
-
+                    self.calls.append(call_info['func_name'])
+                    if var_name not in self.return_assignments:
+                        self.return_assignments[var_name] = []
+                    self.return_assignments[var_name].append(call_info['func_name'])
+            
+            # Check if the value is a Name (could be a variable holding a return value)
             elif isinstance(node.value, ast.Name):
+                # Track variable assignments for data flow
                 pass
-
+        
         self.generic_visit(node)
     
     def visit_Call(self, node):
