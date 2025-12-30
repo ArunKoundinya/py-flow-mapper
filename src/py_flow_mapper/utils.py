@@ -120,17 +120,36 @@ def load_json(file_path: Path) -> Any:
 def get_project_structure(base_path: Path, exclude_dirs: List[str] = None) -> Dict[str, Any]:
     """Get the project directory structure."""
     if exclude_dirs is None:
-        exclude_dirs = ['venv', '.venv', '__pycache__', '.git', '.idea', '.vscode']
-    
-    structure = {}
-    
-    for item in sorted(base_path.iterdir()):
-        if item.name in exclude_dirs:
+        exclude_dirs = [
+            "venv", ".venv", "env", ".env", "virtualenv",
+            "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache",
+            ".coverage", "htmlcov",
+            ".git", ".hg", ".svn",
+            ".idea", ".vscode", ".DS_Store", "__MACOSX",
+            "build", "dist", ".eggs", ".tox", ".nox",
+            "node_modules", "site-packages",
+            "docs", "doc", "notebooks", ".ipynb_checkpoints",
+            "models", "outputs", "results",
+            "logs", "tmp", "temp",
+        ]
+
+    exclude_set = set(exclude_dirs)
+    structure: Dict[str, Any] = {}
+
+    for item in sorted(base_path.iterdir(), key=lambda p: p.name):
+        name = item.name
+
+        # Unified exclusion logic (works for both files and dirs)
+        if (
+            name in exclude_set
+            or name.endswith(".egg-info")                          # e.g., mypkg.egg-info
+            or any(name.startswith(excl) for excl in exclude_set)  # e.g., venv311, build_temp
+        ):
             continue
-        
+
         if item.is_dir():
-            structure[item.name] = get_project_structure(item, exclude_dirs)
+            structure[name] = get_project_structure(item, exclude_dirs)
         else:
-            structure[item.name] = 'file'
-    
+            structure[name] = "file"
+
     return structure
