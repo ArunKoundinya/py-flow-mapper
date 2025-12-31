@@ -542,15 +542,50 @@ class DataFlowAnalyzer(ast.NodeVisitor):
         call_info = self._extract_call_info(node)
         if call_info:
             func_name = call_info['func_name']
-            self.calls.append(func_name)
+            ## Avoid Duplicates
+            if func_name not in self.calls:
+                self.calls.append(func_name)
 
             arg_vars = []
             for arg in node.args:
                 if isinstance(arg, ast.Name):
                     arg_vars.append(arg.id)
 
+                if isinstance(arg, ast.Constant):
+                    ## Added handling for string constants
+                    val = repr(arg.value) if isinstance(arg.value, str) else str(arg.value)
+                    arg_vars.append(val)
+
             if arg_vars:
+                # Record positional arguments
                 self.call_arguments.setdefault(func_name, []).extend(arg_vars)
+
+            ## Adding New Block for Keyword Arguments
+            for kwarg in node.keywords:
+                # Keyword arguments
+                if kwarg.arg is not None:
+                    # Regular kwarg case
+                    key = kwarg.arg 
+                    if isinstance(kwarg.value, ast.Name):
+                        val = kwarg.value.id
+
+                    if isinstance(kwarg.value, ast.Constant):
+                        val = repr(kwarg.value.value) if isinstance(kwarg.value.value, str) else str(kwarg.value.value)
+                    else:
+                        val = f"<{kwarg.value.__class__.__name__}>"
+
+                    self.call_arguments.setdefault(func_name, []).append(f"{key}={val}")
+
+                else:
+                    # **kwargs case
+                    if isinstance(kwarg.value, ast.Name):
+                        self.call_arguments.setdefault(func_name, []).append(f"**{kwarg.value.id}")
+                    elif isinstance(kwarg.value, ast.Constant):
+                        val = repr(kwarg.value.value) if isinstance(kwarg.value.value, str) else str(kwarg.value.value)
+                        self.call_arguments.setdefault(func_name, []).append(f"**={val}")
+
+                    else:
+                        self.call_arguments.setdefault(func_name, []).append(f"**=<${kwarg.value.__class__.__name__}>")
 
         self.generic_visit(node)
 
