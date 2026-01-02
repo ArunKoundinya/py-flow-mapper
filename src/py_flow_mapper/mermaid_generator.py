@@ -253,6 +253,37 @@ class MermaidGenerator:
                 lines.append("        Done((Done))")
             lines.append("    end")
 
+            # ---- External composition edges (e.g., ColumnTransformer -> OneHotEncoder) ----
+            extra_call_edges = self.metadata.get("call_edges", []) or []
+            extra_seen = set()
+
+            for e in extra_call_edges:
+                src_call = e.get("source") or ""
+                tgt_call = e.get("target") or ""
+                mod = e.get("module") or ""
+
+                if not src_call or not tgt_call:
+                    continue
+
+                # Keep only external-resolved calls in this module context
+                if not keep_external(src_call, mod):
+                    continue
+                if not keep_external(tgt_call, mod):
+                    continue
+
+                src_ext = external_root_name(src_call, mod) or src_call
+                tgt_ext = external_root_name(tgt_call, mod) or tgt_call
+
+                # Only draw if the target/source nodes exist in the External subgraph set
+                if src_ext not in external_nodes or tgt_ext not in external_nodes:
+                    continue
+
+                k = (src_ext, tgt_ext)
+                if k in extra_seen:
+                    continue
+                extra_seen.add(k)
+
+                lines.append(f"    {nid('ext:' + src_ext)} --> {nid('ext:' + tgt_ext)}")
         # ---------- call edges (internal -> internal/external), ordered from entry ----------
         caller_order = ordered_functions_from_entry("main.main")
 
@@ -268,9 +299,41 @@ class MermaidGenerator:
             call_args = info.get("call_arguments", {}) or {}
             seen = set()
 
+            extra_call_edges = self.metadata.get("call_edges", []) or []
+
+            caller_external_roots = set()
+            for c in (info.get("calls") or []):
+                if keep_external(c, current_module) and not resolve_internal(c, current_module):
+                    caller_external_roots.add(external_root_name(c, current_module) or c)
+
+            suppressed_external_roots = set()
+            for e in extra_call_edges:
+                src_call = e.get("source") or ""
+                tgt_call = e.get("target") or ""
+                mod = e.get("module") or ""
+
+                if not src_call or not tgt_call:
+                    continue
+
+                # apply only when edge was discovered in same module context
+                if mod and mod != current_module:
+                    continue
+
+                src_root = external_root_name(src_call, current_module) or src_call
+                tgt_root = external_root_name(tgt_call, current_module) or tgt_call
+
+                if src_root in caller_external_roots:
+                    suppressed_external_roots.add(tgt_root)
+
+
             for callee in (info.get("calls") or []):
                 if not callee:
                     continue
+
+                if keep_external(callee, current_module) and not resolve_internal(callee, current_module):
+                    callee_root = external_root_name(callee, current_module) or callee
+                    if callee_root in suppressed_external_roots:
+                        continue
 
                 target_internal = resolve_internal(callee, current_module)
 

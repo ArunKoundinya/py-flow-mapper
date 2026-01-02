@@ -32,6 +32,7 @@ class FunctionInfo:
     docstring: Optional[str] = None
     return_assignments: Dict[str, List[str]] = field(default_factory=dict)  # {var_name: [called_functions]}
     call_arguments: Dict[str, List[str]] = field(default_factory=dict)
+    call_edges: List[Tuple[str, str, str]] = field(default_factory=list)
     
     def __post_init__(self):
         if self.decorators is None:
@@ -291,7 +292,8 @@ class ProjectAnalyzer:
                 'call_arguments': getattr(func, "call_arguments", {}),
                 'module': func.module,
                 'file_path': func.file_path,
-                'lineno': func.lineno
+                'lineno': func.lineno,
+                'call_edges': getattr(func, "call_edges", []),
             }
         
         # Data flow edges
@@ -304,6 +306,16 @@ class ProjectAnalyzer:
             }
             for edge in self.data_flow_edges
         ]
+
+        call_edges = []
+        seen = set()
+        for _, func in self.function_map.items():
+            for src, tgt, mod in getattr(func, "call_edges", []):
+                k = (src, tgt, mod)
+                if k in seen:
+                    continue
+                seen.add(k)
+                call_edges.append({"source": src, "target": tgt, "module": mod})
         
         metadata = {
             'project': {
@@ -321,6 +333,7 @@ class ProjectAnalyzer:
             },
             'function_map': function_map,
             'data_flow_edges': data_flow_edges,
+            'call_edges': call_edges,
             'call_graph': self._generate_call_graph_data(),
             'import_graph': self._generate_import_graph_data()
         }
@@ -429,6 +442,7 @@ class ModuleVisitor(ast.NodeVisitor):
             decorators=decorators,
             docstring=docstring,
             call_arguments=flow_analyzer.call_arguments,
+            call_edges=flow_analyzer.call_edges,
         )
         
         # Store return assignments for data flow analysis
@@ -518,6 +532,7 @@ class DataFlowAnalyzer(ast.NodeVisitor):
         self.return_assignments: Dict[str, List[str]] = {}  # var_name -> [called_functions]
         self.current_assignment = None
         self.call_arguments: Dict[str, List[str]] = {}
+        self.call_edges: List[Tuple[str, str, str]] = []
         
     def visit_Assign(self, node):
         """Track assignments of function return values."""
@@ -551,7 +566,7 @@ class DataFlowAnalyzer(ast.NodeVisitor):
                 if isinstance(arg, ast.Name):
                     arg_vars.append(arg.id)
 
-                if isinstance(arg, ast.Constant):
+                elif isinstance(arg, ast.Constant):
                     ## Added handling for string constants
                     val = repr(arg.value) if isinstance(arg.value, str) else str(arg.value)
                     arg_vars.append(val)
@@ -569,8 +584,75 @@ class DataFlowAnalyzer(ast.NodeVisitor):
                     if isinstance(kwarg.value, ast.Name):
                         val = kwarg.value.id
 
-                    if isinstance(kwarg.value, ast.Constant):
+                    elif isinstance(kwarg.value, ast.Constant):
                         val = repr(kwarg.value.value) if isinstance(kwarg.value.value, str) else str(kwarg.value.value)
+
+                    elif isinstance(kwarg.value, ast.List):
+                        items = []
+                        mappings = []  # <-- NEW: for ColumnTransformer-style mapping
+                        payloads = []
+                        if kwarg.value.elts and all(isinstance(e, ast.Tuple) and len(e.elts) >= 2 for e in kwarg.value.elts):
+                            for e in kwarg.value.elts:
+                                payload = e.elts[1]
+                                if isinstance(payload, ast.Name):
+                                    payloads.append(payload.id)
+
+                        # If we successfully extracted payload names, store them and skip pretty string for this kwarg
+                        if payloads:
+                            self.call_arguments.setdefault(func_name, []).extend(payloads)
+                            continue
+
+                        for elt in kwarg.value.elts:
+                            if isinstance(elt, ast.Tuple) and len(elt.elts) >= 3:
+                                transformer_node = elt.elts[1]
+                                cols_node = elt.elts[2]
+
+                                transformer_name = None
+                                cols_name = None
+
+                                if isinstance(transformer_node, ast.Call):
+                                    ci = self._extract_call_info(transformer_node)
+                                    transformer_name = ci["func_name"] if ci else "<Call>"
+
+                                if isinstance(cols_node, ast.Name):
+                                    cols_name = cols_node.id
+                                elif isinstance(cols_node, ast.Constant):
+                                    cols_name = repr(cols_node.value) if isinstance(cols_node.value, str) else str(cols_node.value)
+
+                                if transformer_name and cols_name:
+                                    mappings.append({transformer_name: cols_name})
+                                    self.call_edges.append((func_name, transformer_name, self.module_name))
+
+                            # ---- your existing pretty rendering ----
+                            if isinstance(elt, ast.Tuple):
+                                parts = []
+                                for t in elt.elts:
+                                    if isinstance(t, ast.Name):
+                                        parts.append(t.id)
+                                    elif isinstance(t, ast.Constant):
+                                        parts.append(repr(t.value) if isinstance(t.value, str) else str(t.value))
+                                    elif isinstance(t, ast.Call):
+                                        ci = self._extract_call_info(t)
+                                        parts.append(ci["func_name"] if ci else "<Call>")
+                                    else:
+                                        parts.append(f"<{t.__class__.__name__}>")
+
+                                items.append("(" + ", ".join(parts) + ")")
+                            elif isinstance(elt, ast.Name):
+                                items.append(elt.id)
+                            elif isinstance(elt, ast.Constant):
+                                items.append(repr(elt.value) if isinstance(elt.value, str) else str(elt.value))
+                            else:
+                                items.append(f"<{elt.__class__.__name__}>")
+
+                        val = "[" + ", ".join(items) + "]"
+
+                        # Store BOTH mapping dict(s) and the pretty string, under the same outer function call
+                        if mappings:
+                            self.call_arguments.setdefault(func_name, []).extend(mappings)
+                        self.call_arguments.setdefault(func_name, []).append(f"{key}={val}")
+                        continue
+
                     else:
                         val = f"<{kwarg.value.__class__.__name__}>"
 
