@@ -174,7 +174,7 @@ class MermaidGenerator:
 
         def is_fileish_arg(arg: str) -> bool:
             a = (arg or "").lower()
-            return any(k in a for k in ("meta", "json", "yaml", "yml", "config", "path", "file"))
+            return any(k in a for k in ("meta", "json", "yaml", "yml", "config", "file", ".json", ".yaml", ".yml", ".cfg", ".ini", ".txt", ".csv")) 
 
         def ordered_functions_from_entry(entry_key: str) -> list[str]:
             """DFS from entry, preserving call order from metadata."""
