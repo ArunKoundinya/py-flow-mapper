@@ -165,6 +165,7 @@ graph LR
         ext_sklearn_pipeline_Pipeline[Pipeline]
         ext_sklearn_preprocessing_OneHotEncoder[OneHotEncoder]
     end
+    ext_sklearn_compose_ColumnTransformer --> ext_sklearn_preprocessing_OneHotEncoder
     main_main --> main_load_data
     main_main --> |df| main_train_and_eval
     main_load_data --> |url| ext_pandas
@@ -172,9 +173,8 @@ graph LR
     main_train_and_eval --> main_build_pipeline
     main_train_and_eval --> |preds,y_test| ext_sklearn_metrics_accuracy_score
     main_build_pipeline --> ext_sklearn_compose_ColumnTransformer
-    main_build_pipeline --> ext_sklearn_preprocessing_OneHotEncoder
     main_build_pipeline --> ext_sklearn_linear_model_LogisticRegression
-    main_build_pipeline --> ext_sklearn_pipeline_Pipeline
+    main_build_pipeline --> |model,preprocessor| ext_sklearn_pipeline_Pipeline
     main_load_data -.->|df| main_main
     main_train_and_eval -.->|acc| main_main
     ext_pandas -.->|df| main_load_data
@@ -283,13 +283,13 @@ graph LR
     mermaid_generator___init__ --> |metadata_path| mermaid_generator__load_metadata
     mermaid_generator_generate_detailed_flow_graph --> |current_module| mermaid_generator_module_import_mapping
     mermaid_generator_generate_detailed_flow_graph --> |call_name,callee,fn,n| mermaid_generator_short_label
-    mermaid_generator_generate_detailed_flow_graph --> |call_name,callee,current_module,fileish_callee,p,producer| mermaid_generator_external_root_name
+    mermaid_generator_generate_detailed_flow_graph --> |c,call_name,callee,current_module,fileish_callee,mod,p,producer,src_call,tgt_call| mermaid_generator_external_root_name
     mermaid_generator_generate_detailed_flow_graph --> |base| mermaid_generator_is_camel_case
     mermaid_generator_generate_detailed_flow_graph --> |c,call,candidate,current_module,mapped| mermaid_generator__find_function_full_name
     mermaid_generator_generate_detailed_flow_graph --> |entry_key,target| mermaid_generator_visit
     mermaid_generator_generate_detailed_flow_graph --> |caller,fn,internal_p,short_module,target_internal| mermaid_generator_nid
     mermaid_generator_generate_detailed_flow_graph --> |c,callee,current_module,p| mermaid_generator_resolve_internal
-    mermaid_generator_generate_detailed_flow_graph --> |c,callee,current_module,p| mermaid_generator_keep_external
+    mermaid_generator_generate_detailed_flow_graph --> |c,callee,current_module,mod,p,src_call,tgt_call| mermaid_generator_keep_external
     mermaid_generator_generate_detailed_flow_graph --> mermaid_generator_is_outputish_call
     mermaid_generator_generate_detailed_flow_graph --> mermaid_generator_ordered_functions_from_entry
     mermaid_generator_generate_detailed_flow_graph --> |vars_passed,vars_used| mermaid_generator_normalize_vars
@@ -325,7 +325,7 @@ graph LR
     analyzer_visit_FunctionDef --> |node| mermaid_generator_visit
     analyzer_visit_ClassDef --> |item| mermaid_generator_visit
     analyzer_visit_Assign --> analyzer__extract_call_info
-    analyzer_visit_Call --> |node| analyzer__extract_call_info
+    analyzer_visit_Call --> |node,t,transformer_node| analyzer__extract_call_info
     analyzer_visit_Return --> analyzer__extract_call_info
     analyzer__extract_call_info --> analyzer__get_attribute_name
     cli_main --> |args| cli_analyze_project
@@ -372,6 +372,8 @@ graph LR
     analyzer__resolve_function_name -.->|callee_key| analyzer__build_data_flow_graph
     analyzer__extract_call_info -.->|call_info| analyzer_visit_Assign
     analyzer__extract_call_info -.->|call_info| analyzer_visit_Call
+    analyzer__extract_call_info -.->|ci| analyzer_visit_Call
+    analyzer__extract_call_info -.->|ci| analyzer_visit_Call
     analyzer__extract_call_info -.->|call_info| analyzer_visit_Return
     analyzer__get_attribute_name -.->|method_name| analyzer__extract_call_info
     analyzer_analyze -.->|metadata| cli_analyze_project
