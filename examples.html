@@ -356,6 +356,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         ext_sklearn_pipeline_Pipeline[Pipeline]
         ext_sklearn_preprocessing_OneHotEncoder[OneHotEncoder]
     end
+    ext_sklearn_compose_ColumnTransformer --&gt; ext_sklearn_preprocessing_OneHotEncoder
     main_main --&gt; main_load_data
     main_main --&gt; |df| main_train_and_eval
     main_load_data --&gt; |url| ext_pandas
@@ -363,9 +364,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     main_train_and_eval --&gt; main_build_pipeline
     main_train_and_eval --&gt; |preds,y_test| ext_sklearn_metrics_accuracy_score
     main_build_pipeline --&gt; ext_sklearn_compose_ColumnTransformer
-    main_build_pipeline --&gt; ext_sklearn_preprocessing_OneHotEncoder
     main_build_pipeline --&gt; ext_sklearn_linear_model_LogisticRegression
-    main_build_pipeline --&gt; ext_sklearn_pipeline_Pipeline
+    main_build_pipeline --&gt; |model,preprocessor| ext_sklearn_pipeline_Pipeline
     main_load_data -.-&gt;|df| main_main
     main_train_and_eval -.-&gt;|acc| main_main
     ext_pandas -.-&gt;|df| main_load_data
@@ -474,13 +474,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator___init__ --&gt; |metadata_path| mermaid_generator__load_metadata
     mermaid_generator_generate_detailed_flow_graph --&gt; |current_module| mermaid_generator_module_import_mapping
     mermaid_generator_generate_detailed_flow_graph --&gt; |call_name,callee,fn,n| mermaid_generator_short_label
-    mermaid_generator_generate_detailed_flow_graph --&gt; |call_name,callee,current_module,fileish_callee,p,producer| mermaid_generator_external_root_name
+    mermaid_generator_generate_detailed_flow_graph --&gt; |c,call_name,callee,current_module,fileish_callee,mod,p,producer,src_call,tgt_call| mermaid_generator_external_root_name
     mermaid_generator_generate_detailed_flow_graph --&gt; |base| mermaid_generator_is_camel_case
     mermaid_generator_generate_detailed_flow_graph --&gt; |c,call,candidate,current_module,mapped| mermaid_generator__find_function_full_name
     mermaid_generator_generate_detailed_flow_graph --&gt; |entry_key,target| mermaid_generator_visit
     mermaid_generator_generate_detailed_flow_graph --&gt; |caller,fn,internal_p,short_module,target_internal| mermaid_generator_nid
     mermaid_generator_generate_detailed_flow_graph --&gt; |c,callee,current_module,p| mermaid_generator_resolve_internal
-    mermaid_generator_generate_detailed_flow_graph --&gt; |c,callee,current_module,p| mermaid_generator_keep_external
+    mermaid_generator_generate_detailed_flow_graph --&gt; |c,callee,current_module,mod,p,src_call,tgt_call| mermaid_generator_keep_external
     mermaid_generator_generate_detailed_flow_graph --&gt; mermaid_generator_is_outputish_call
     mermaid_generator_generate_detailed_flow_graph --&gt; mermaid_generator_ordered_functions_from_entry
     mermaid_generator_generate_detailed_flow_graph --&gt; |vars_passed,vars_used| mermaid_generator_normalize_vars
@@ -516,7 +516,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     analyzer_visit_FunctionDef --&gt; |node| mermaid_generator_visit
     analyzer_visit_ClassDef --&gt; |item| mermaid_generator_visit
     analyzer_visit_Assign --&gt; analyzer__extract_call_info
-    analyzer_visit_Call --&gt; |node| analyzer__extract_call_info
+    analyzer_visit_Call --&gt; |node,t,transformer_node| analyzer__extract_call_info
     analyzer_visit_Return --&gt; analyzer__extract_call_info
     analyzer__extract_call_info --&gt; analyzer__get_attribute_name
     cli_main --&gt; |args| cli_analyze_project
@@ -563,6 +563,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     analyzer__resolve_function_name -.-&gt;|callee_key| analyzer__build_data_flow_graph
     analyzer__extract_call_info -.-&gt;|call_info| analyzer_visit_Assign
     analyzer__extract_call_info -.-&gt;|call_info| analyzer_visit_Call
+    analyzer__extract_call_info -.-&gt;|ci| analyzer_visit_Call
+    analyzer__extract_call_info -.-&gt;|ci| analyzer_visit_Call
     analyzer__extract_call_info -.-&gt;|call_info| analyzer_visit_Return
     analyzer__get_attribute_name -.-&gt;|method_name| analyzer__extract_call_info
     analyzer_analyze -.-&gt;|metadata| cli_analyze_project
