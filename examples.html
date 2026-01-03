@@ -476,7 +476,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator_generate_detailed_flow_graph --&gt; |call_name,callee,fn,n| mermaid_generator_short_label
     mermaid_generator_generate_detailed_flow_graph --&gt; |call_name,callee,current_module,fileish_callee,p,producer| mermaid_generator_external_root_name
     mermaid_generator_generate_detailed_flow_graph --&gt; |base| mermaid_generator_is_camel_case
-    mermaid_generator_generate_detailed_flow_graph --&gt; |c,call,current_module| mermaid_generator__find_function_full_name
+    mermaid_generator_generate_detailed_flow_graph --&gt; |c,call,candidate,current_module,mapped| mermaid_generator__find_function_full_name
     mermaid_generator_generate_detailed_flow_graph --&gt; |entry_key,target| mermaid_generator_visit
     mermaid_generator_generate_detailed_flow_graph --&gt; |caller,fn,internal_p,short_module,target_internal| mermaid_generator_nid
     mermaid_generator_generate_detailed_flow_graph --&gt; |c,callee,current_module,p| mermaid_generator_resolve_internal
@@ -490,7 +490,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator_keep_external --&gt; |call_name,current_module| mermaid_generator_external_root_name
     mermaid_generator_keep_external --&gt; |current_module| mermaid_generator_module_import_mapping
     mermaid_generator_keep_external --&gt; |base| mermaid_generator_is_camel_case
-    mermaid_generator_resolve_internal --&gt; |call,current_module| mermaid_generator__find_function_full_name
+    mermaid_generator_resolve_internal --&gt; |call,candidate,current_module,mapped| mermaid_generator__find_function_full_name
+    mermaid_generator_resolve_internal --&gt; |current_module| mermaid_generator_module_import_mapping
     mermaid_generator_ordered_functions_from_entry --&gt; |c,current_module| mermaid_generator__find_function_full_name
     mermaid_generator_ordered_functions_from_entry --&gt; |entry_key,target| mermaid_generator_visit
     mermaid_generator_visit --&gt; |c,current_module| mermaid_generator__find_function_full_name
@@ -531,8 +532,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     cli_print_tree --&gt; |value| cli_print_tree
     mermaid_generator_module_import_mapping -.-&gt;|imp_map| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_module_import_mapping -.-&gt;|imp_map| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator_module_import_mapping -.-&gt;|imp_map| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_short_label -.-&gt;|base| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_external_root_name -.-&gt;|root| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_generate_detailed_flow_graph
+    mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_generate_detailed_flow_graph
     mermaid_generator_ordered_functions_from_entry -.-&gt;|caller_order| mermaid_generator_generate_detailed_flow_graph
@@ -546,6 +550,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     mermaid_generator_external_root_name -.-&gt;|root| mermaid_generator_keep_external
     mermaid_generator_module_import_mapping -.-&gt;|imp_map| mermaid_generator_keep_external
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_resolve_internal
+    mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_resolve_internal
+    mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_resolve_internal
+    mermaid_generator_module_import_mapping -.-&gt;|imp_map| mermaid_generator_resolve_internal
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_ordered_functions_from_entry
     mermaid_generator__find_function_full_name -.-&gt;|target| mermaid_generator_visit
     ext_pathlib_Path -.-&gt;|origin_path| utils_is_stdlib_module
