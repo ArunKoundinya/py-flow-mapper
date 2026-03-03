@@ -25,9 +25,12 @@ def main():
     diagram_parser = subparsers.add_parser('diagram', help='Generate diagrams from metadata')
     diagram_parser.add_argument('metadata', type=str, help='Path to metadata JSON file')
     # https://github.com/ArunKoundinya/py-flow-mapper/issues/1 : forced external
-    diagram_parser.add_argument( "--include-external", type=str, default="",
-                                help="Comma-separated list of external libraries to include in diagrams"
-                                )
+    diagram_parser.add_argument("--include-external", type=str, default="",
+                                help="Comma-separated list of external libraries to include in diagrams")
+    diagram_parser.add_argument("--layout", type=str, default="TD", choices=["TD", "LR"],
+                                help="Diagram layout direction: TD (top-down, default) or LR (left-right)")
+    diagram_parser.add_argument("--show-dataflow", action="store_true", default=False,
+                                help="Show dashed data-flow edges (hidden by default to reduce clutter)")
 
     # Structure command
     struct_parser = subparsers.add_parser('structure', help='Show project structure')
@@ -100,16 +103,20 @@ def generate_diagrams(args):
     
     print(f"Generating diagrams from: {metadata_path}")
     
-    generator = MermaidGenerator(metadata_path,include_external=args.include_external)
+    generator = MermaidGenerator(metadata_path, include_external=args.include_external, layout=args.layout, show_dataflow=args.show_dataflow)
     
     try:    
         master_path = generator.generate_all_diagrams()
-        print(f"\nAll diagrams generated in: {master_path}")
-        
-        print("\nDiagrams are ready! You can view them:")
-        print("1. Copy the content to Mermaid Live Editor: https://mermaid.live/")
-        print("2. Use VS Code with Mermaid extension")
-        print("3. Use GitHub/Markdown viewers that support Mermaid")
+        print(f"\nAll diagrams generated in: {master_path.parent}")
+
+        print("\nTwo layout variants created:")
+        print("  flow_TD.mmd — top-down  (best for following execution order)")
+        print("  flow_LR.mmd — left-right (best for project vs external boundary)")
+        print("\nTo view:")
+        print("  1. Mermaid Live Editor : https://mermaid.live/")
+        print("  2. VS Code + Mermaid extension")
+        print("  3. GitHub Markdown (renders automatically)")
+        print("\nTip: re-run with --show-dataflow to also see data-flow edges")
         
     except Exception as e:
         print(f"Error generating diagrams: {e}")
